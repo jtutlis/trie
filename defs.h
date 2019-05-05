@@ -1,6 +1,7 @@
 /*
  * =====================================================================================
  *
+ *
  *       Filename:  defs.h
  *
  *    Description:  defs 
@@ -26,4 +27,11 @@ typedef struct TrieNode{
     int isLeaf;
 } TrieNode;
 
+typedef struct PossibleWords {
+    struct PossibleWords *next;
+    char *word;
+} PossibleWords;
 
+PossibleWords *findPossibleWords(TrieNode *root, char *string);
+void searchTreeForPossibleWords(TrieNode *root, PossibleWords *head, char *currPath);
+char *generateString(char *currPath, char newChar);
