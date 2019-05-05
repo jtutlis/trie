@@ -24,6 +24,7 @@
 
 #define CHAR_TO_INDEX(c) ((int)c - (int)'a')
 #define INDEX_TO_CHAR(i) (char)'a' + i
+#define VALID_CHAR(c) (c >= (int) 'a' && c <= (int) 'z')
 
 TrieNode *makeTrieNode(){
     return (TrieNode *) calloc(1, sizeof(TrieNode));
@@ -35,9 +36,11 @@ PossibleWords *makePossibleWords(){
 
 void addPossibleWord(PossibleWords *head, char *word){
     PossibleWords *newNode = makePossibleWords();
-    newNode->word = word;
-    printf("adding word: ");
-    puts(word); 
+    size_t len = strlen(word);
+    char *newWord = (char *) malloc(len);
+    strncpy(newWord, word, len);
+    newWord[len] = '\0';
+    newNode->word = newWord;
 
     while(head->next != NULL){
         head = head->next;
@@ -45,24 +48,45 @@ void addPossibleWord(PossibleWords *head, char *word){
     head->next = newNode;
 }
 
+void freePossibleWords(PossibleWords *head){
+    if (head){
+        freePossibleWords(head->next);
+    }
+
+    free(head);
+}
+
+void freeTrieTree(TrieNode *root){
+    if(root){
+        for (int i = 0; i < ALPHABET_SIZE; i++){
+            if (root->alphabet[i]){
+                freeTrieTree(root->alphabet[i]);
+            }
+        }
+    }
+
+    free(root);
+}
+
 void printPossibleWords(PossibleWords *head, char *currPath){
     printf("Possible words for '%s':\n", currPath);
     while(head){
         if (head->word != NULL){
-            puts(head->word);
+            printf(">%s\n", head->word);
         }
         head = head->next;
     }
 }
 
 void add(TrieNode *root, char *string){
-    if (string != NULL || (*string) != '\0'){
+    //printf("adding word: %s\n", string);
+    if (string != NULL && (*string) != '\0' && strlen(string) > 0){
         TrieNode *node = root;
         while((*string) != '\0' && node != NULL){
             // printf("%c\n", (*string));
             if (node->alphabet[CHAR_TO_INDEX(*string)] == NULL){
                 node->alphabet[CHAR_TO_INDEX(*string)] = makeTrieNode();
-                //printf("added layer for char: %c\n", (*string));
+                // printf("added layer for char: %c\n", (*string));
             }
             node = node->alphabet[CHAR_TO_INDEX(*string)];
             string++;
@@ -114,17 +138,15 @@ PossibleWords *findPossibleWords(TrieNode *root, char *string){
     }
     char *tempString = string;
     TrieNode *curr = root;
-    TrieNode *prev = NULL;
 
     // naviagte to currnent location
-    while(curr){
-        prev = curr;
+    while(curr && VALID_CHAR(*string)){
         curr = curr->alphabet[CHAR_TO_INDEX(*string)];
         string++;
     }
 
     PossibleWords *possibleWords = makePossibleWords();
-    searchTreeForPossibleWords(prev, possibleWords, tempString);
+    searchTreeForPossibleWords(curr, possibleWords, tempString);
     return possibleWords;
 }
 // helper function
@@ -136,9 +158,9 @@ void searchTreeForPossibleWords(TrieNode *root, PossibleWords *head, char *currP
                 char *newPath = generateString(currPath, newChar);
                 if (root->alphabet[i]->isLeaf){
                     addPossibleWord(head, newPath);
-                    printf("New string: %s\n", newPath);
+                    //printf("New string: %s\n", newPath);
                 }
-                printf("Checking string: %s\n", newPath);
+                //printf("Checking string: %s\n", newPath);
 
                 searchTreeForPossibleWords(root->alphabet[i], head, newPath);  
                 free(newPath); 
@@ -148,6 +170,8 @@ void searchTreeForPossibleWords(TrieNode *root, PossibleWords *head, char *currP
 }
 
 char *generateString(char *currPath, char newChar){
+    
+
     size_t len = strlen(currPath);
     char *newString = (char *) malloc(len + 2); // 1 for new char + \0
     strncpy(newString, currPath, len);
@@ -157,23 +181,65 @@ char *generateString(char *currPath, char newChar){
     return newString;
 }
 
-int main(){
-    char *string = {"test\0"};
+void readFile(FILE *input, TrieNode *root){
+    int wordCount = 0;
+    char buffer[1024];
+    int c;
+    int count = 0;
+    while((c = fgetc(input)) != EOF){
+        char l = (char) c;
+        if (l != '\n' && l != '\0'){
+            if (c >= (int) 'a' && c <= (int) 'z'){
+                buffer[count] = l;
+                count++;
+            }
+        } else {
+            wordCount++;
+            buffer[count] = '\0';
+            if (count > 0){
+                add(root, buffer);
+            }
+            count = 0;
+            memset(buffer, 0, 1024);
+        }
+    }
+}
+
+int howManyPossibleWords(PossibleWords *possibleWords){
+    int count = 0;
+    while(possibleWords){
+        possibleWords = possibleWords->next;
+        count++;
+    }
+
+    return count;
+}
+
+int main(int argc, char **argv){
+    
+    
+    if (argc  < 2){
+        printf("Enter a file to read\n");
+    }
+
+    char *string = {"arch"};
+    if (argc == 3){
+        string = argv[2];    
+    }
+
+    FILE *input = fopen(argv[1], "r");
     TrieNode *tree = makeTrieNode();
-    add(tree, string);
-    add(tree, "help");
-    add(tree, "helpme");
-    add(tree, "helpyou");
+    readFile(input, tree);
 
-    assert(search(tree, "help"));
-    assert(search(tree, "helpme"));
-    assert(search(tree, "helpyou"));
+    //printf("Size of tree: %d\n", sizeOfTree(tree));
+    PossibleWords *possibleWords = findPossibleWords(tree, string);
+    printPossibleWords(possibleWords, string);
+    printf("Number of possible words: %d\n", howManyPossibleWords(possibleWords));
 
-    //  printf("Size of tree: %d\n", sizeOfTree(tree));
-    printPossibleWords(findPossibleWords(tree, "h"), "h");
-
-
-
+    free(input);
+    freePossibleWords(possibleWords);
+    freeTrieTree(tree);
+    fclose(input);
     return 0;
 }
 
