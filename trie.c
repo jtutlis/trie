@@ -80,7 +80,7 @@ void printPossibleWords(PossibleWords *head, char *currPath){
     printf("Possible words for '%s':\n", currPath);
     while(head){
         if (head->word != NULL){
-            printf(">%s\n", head->word);
+            printf("%s\n", head->word);
         }
         head = head->next;
     }
@@ -214,7 +214,7 @@ void readFile(FILE *input, TrieNode *root){
 }
 
 int howManyPossibleWords(PossibleWords *possibleWords){
-    int count = 0;
+    int count = -1;
     while(possibleWords){
         possibleWords = possibleWords->next;
         count++;
@@ -225,24 +225,20 @@ int howManyPossibleWords(PossibleWords *possibleWords){
 
 int main(int argc, char **argv){
 
-
-    if (argc  < 2){
-        printf("Enter a file to read\n");
+    if (argc != 3){
+        printf("Invalid arguemets: ./trie input_file search_string\n");
+        return 1;
     }
-
-    char *string = {"arch"};
-    if (argc == 3){
-        string = argv[2];    
-    }
-
+    char * string = argv[2];    
     FILE *input = fopen(argv[1], "r");
+    
     TrieNode *tree = makeTrieNode();
     readFile(input, tree);
 
     //printf("Size of tree: %d\n", sizeOfTree(tree));
     PossibleWords *possibleWords = findPossibleWords(tree, string);
-    printPossibleWords(possibleWords, string);
     printf("Number of possible words: %d\n", howManyPossibleWords(possibleWords));
+    printPossibleWords(possibleWords, string);
 
     freePossibleWords(possibleWords);
     freeTrieTree(tree);
