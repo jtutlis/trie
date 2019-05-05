@@ -27,32 +27,40 @@
 #define VALID_CHAR(c) (c >= (int) 'a' && c <= (int) 'z')
 
 TrieNode *makeTrieNode(){
-    return (TrieNode *) calloc(1, sizeof(TrieNode));
-} 
+    //return (TrieNode *) calloc(1, sizeof(TrieNode));
+    TrieNode *node = (TrieNode *) malloc(sizeof(TrieNode));
+    memset(node, 0, sizeof(TrieNode));
+    return node;
+}
 
 PossibleWords *makePossibleWords(){
-    return (PossibleWords *) calloc(1, sizeof(PossibleWords));
+    //return (PossibleWords *) calloc(1, sizeof(PossibleWords));
+    PossibleWords *possibleWords = (PossibleWords *) malloc(sizeof(PossibleWords));
+    memset(possibleWords, 0, sizeof(PossibleWords));
+    return possibleWords; 
 }
 
 void addPossibleWord(PossibleWords *head, char *word){
-    PossibleWords *newNode = makePossibleWords();
     size_t len = strlen(word);
-    char *newWord = (char *) malloc(len);
-    strncpy(newWord, word, len);
-    newWord[len] = '\0';
-    newNode->word = newWord;
+    if (len){
+        PossibleWords *newNode = makePossibleWords();
+        char *newWord = (char *) malloc(len+1);
+        strncpy(newWord, word, len);
+        newWord[len] = '\0';
+        newNode->word = newWord;
 
-    while(head->next != NULL){
-        head = head->next;
+        while(head->next != NULL){
+            head = head->next;
+        }
+        head->next = newNode;
     }
-    head->next = newNode;
 }
 
 void freePossibleWords(PossibleWords *head){
     if (head){
+        free(head->word);
         freePossibleWords(head->next);
     }
-
     free(head);
 }
 
@@ -170,7 +178,7 @@ void searchTreeForPossibleWords(TrieNode *root, PossibleWords *head, char *currP
 }
 
 char *generateString(char *currPath, char newChar){
-    
+
 
     size_t len = strlen(currPath);
     char *newString = (char *) malloc(len + 2); // 1 for new char + \0
@@ -216,8 +224,8 @@ int howManyPossibleWords(PossibleWords *possibleWords){
 }
 
 int main(int argc, char **argv){
-    
-    
+
+
     if (argc  < 2){
         printf("Enter a file to read\n");
     }
@@ -236,7 +244,6 @@ int main(int argc, char **argv){
     printPossibleWords(possibleWords, string);
     printf("Number of possible words: %d\n", howManyPossibleWords(possibleWords));
 
-    free(input);
     freePossibleWords(possibleWords);
     freeTrieTree(tree);
     fclose(input);
